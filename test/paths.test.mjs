@@ -145,7 +145,7 @@ check('sessionCwdOf 各种缺失都返回 undefined 不抛', () => {
 	assert.equal(sessionCwdOf({ sessions: { list: { getSnapshot: () => ({ byId: { s1: { cwd: WIN } } }) } } }, 42), undefined);
 });
 
-check('viewerPathOf 复现事故里的那个路径', () => {
+check('viewerPathOf 把相对路径拼到会话目录上（含非 ASCII 目录名）', () => {
 	const ctx = {
 		sessions: {
 			list: {

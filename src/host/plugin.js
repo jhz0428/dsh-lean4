@@ -148,9 +148,8 @@ function applyInner(ctx, config) {
     return;
   }
   root[APPLIED] = true;
-  /* 不要读 `ctx.baseDir`——它是 cordis 的受控属性，没写进 inject 会抛
-     `cannot get property "baseDir" without inject`，apply 直接失败、路由一条都注册不上
-     （2026-10-29 的 HTTP 405 就是这么来的）。需要目录就用 process.cwd()。 */
+  /* 不要读 `ctx.baseDir`：没声明在 `inject` 里访问它会抛，apply 静默失败、路由一条都注册不上。
+     需要目录就用 `process.cwd()`。 */
   const cwd = typeof process.cwd === 'function' ? process.cwd() : 'unknown';
   ctx.logger?.info?.(`[lean] 宿主半已加载（cwd=${cwd}）`);
   hostLog(`apply: mark applied, cwd=${cwd}`);
@@ -167,10 +166,9 @@ function applyInner(ctx, config) {
   /** 被浏览器 didOpen 过的路径：这些文档的内容以浏览器为准，磁盘可能更旧。 */
   const browserOwned = new Set();
   /*
-   * 连续失败的保护。2026-11-03 的事故就是缺了这一层：文件路径拼错（相对路径
-   * 被当成相对 profile 目录）→ spawn 的 cwd 不存在 → 子进程根本没起来 →
-   * 浏览器每 4 秒一次的 pull 又重建一次，形成「崩溃—重建—再崩溃」的雪崩，
-   * 而且每次都真的去 spawn 一个进程。这里做指数退避 + 熔断：
+   * 连续失败的保护：路径拼错时 spawn 的 cwd 不存在、子进程根本没起来，而浏览器
+   * 每 4 秒一次的 pull 又会重建一次，形成「起不来—重建—再起不来」的雪崩。
+   * 这里做指数退避 + 熔断：
    * 同一个 root 连续失败 6 次后不再自动重建，必须点「重启」或重新打开文件。
    */
   const FAIL_BACKOFF_MS = [1000, 2000, 4000, 8000, 16000, 30000];

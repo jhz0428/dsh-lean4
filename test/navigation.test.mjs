@@ -21,7 +21,7 @@ function test(name, fn) {
 	cases.push({ name, fn });
 }
 
-const ROOT = 'D:\\deepseek-harness\\plugin-engineering';
+const ROOT = 'C:\\work\\demo-project';
 const FILE = `${ROOT}\\001.lean`;
 
 test('shortPath 去掉项目根前缀，并把反斜杠换成正斜杠', () => {
@@ -34,7 +34,7 @@ test('shortPath 根带结尾斜杠也能匹配', () => {
 });
 
 test('shortPath 不相关的路径退回文件名', () => {
-	assert.equal(shortPath('D:\\other\\Foo.lean', ROOT), 'Foo.lean');
+	assert.equal(shortPath('C:\\other\\Foo.lean', ROOT), 'Foo.lean');
 });
 
 test('shortPath 对空值与空根不抛错', () => {

@@ -4,18 +4,18 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 // 宿主半的落地日志。
 //
-// 为什么不用 `ctx.logger`：桌面端的日志只有崩溃包，`console` 进不了任何文件，
-// 之前排查「lean 进程被谁杀了」「路由到底注册没注册」时完全拿不到证据。
-// 这里写进插件目录旁边的 `work/logs/lean-host.log`，出问题直接读文件。
+// 为什么不用宿主的 logger：桌面端的日志只有崩溃包，`console` 进不了任何文件，
+// 排查「Lean 进程为什么退出」「路由注册没注册」时拿不到证据。这里落一个文件，
+// 出问题直接读。默认在系统临时目录，可用 `setLogFile()` 改到别处。
 //
 // 只在宿主半用：浏览器半没有 fs，构建时也不会把它内联进 client bundle。
 
 import { appendFileSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
-/** 默认落在 `projects/fileviewer-highlight/work/logs/lean-host.log`。 */
-const DEFAULT_LOG_FILE = fileURLToPath(new URL('../../../work/logs/lean-host.log', import.meta.url));
+/** 默认 `${tmpdir}/dsh-lean4-host.log`；超过 1 MiB 会先清空。 */
+const DEFAULT_LOG_FILE = join(tmpdir(), 'dsh-lean4-host.log');
 const MAX_BYTES = 1024 * 1024;
 
 let target = DEFAULT_LOG_FILE;
