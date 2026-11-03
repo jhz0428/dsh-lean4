@@ -154,7 +154,7 @@ id / title / icon / exts / priority / fetchStrategy / detect / load / settings /
 
 ```powershell
 # 从 tarball（推荐；tarball 自带 lib/）
-dsh plugin --profile desktop add "D:\path\to\dsh-lean4-0.9.2.tgz"
+dsh plugin --profile desktop add "D:\path\to\dsh-lean4-0.1.0.tgz"
 
 # 从源码目录（先构建，见「构建」）
 npm run build
@@ -517,8 +517,8 @@ CHANGELOG.md           版本历史
 
 ### 沿革
 
-本包原名 `dsh-lean-editor`，0.9.0 起改名 `dsh-lean4`（bundle id、cordis 插件名、
-localStorage 键一并改；老的 infoview 配置会从旧键自动迁移）。
+本包在内部开发期间叫 `dsh-lean-editor`，公开发布前改名 `dsh-lean4`（bundle id、
+cordis 插件名、localStorage 键一并改；老的 infoview 配置会从旧键自动迁移）。
 `VIEWER_ID` 仍是 `lean-editor:lean`，以免重置大家的 `viewersEnabled` 偏好。
 
 ### 致谢

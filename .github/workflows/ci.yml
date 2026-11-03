@@ -64,7 +64,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm pack --json > pack.json
+          # 必须加 --ignore-scripts：上面的 build 已经把 lib/ 建好了，
+          # 而 prepack 会把构建日志打到 stdout，和 --json 的输出混在一起导致解析失败。
+          npm pack --json --ignore-scripts > pack.json
           node -e '
             const info = require("./pack.json");
             const files = info[0].files.map((f) => f.path);
