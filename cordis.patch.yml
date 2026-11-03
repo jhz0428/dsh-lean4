@@ -1,0 +1,14 @@
+# dsh-lean4 bundle patch — one inserted row, loaded at boot like any web row.
+#
+# 这一行的唯一作用是让本包进得了 profile 的 bundles 列表，从而 client-modules 的 node half
+# 才会看到 `dsh.client` 段并把 lib/client.js 下发给浏览器。
+#
+# 宿主半（lib/index.js）自己的路由、Lean 服务器池、Agent 工具注册全部由 apply() 完成，
+# 不需要在这里写 config —— 它没有用户可调项；infoview 的 13 项配置存在浏览器
+# localStorage 里（键 dsh-lean4.infoview-config.v1）。
+#
+# 注意：不要另外手写一条 `- id: lean4`，那会变成重复行 / 重复 id。
+- insert:
+    - id: lean4
+      name: dsh-lean4
+      config: {}

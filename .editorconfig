@@ -1,0 +1,18 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{js,mjs,json,yml,yaml,css}]
+indent_size = 2
+
+[*.md]
+# Markdown 里刻意留两个空格做换行，不要被 trim 掉
+trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+end_of_line = crlf

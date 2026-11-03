@@ -1,0 +1,23 @@
+# 构建产物与中间产物，不入库。
+#
+# `lib/` 由 tools/build-*.mjs 生成（client 由 build-client.mjs 把 src/ 与 vendor 拼成
+# 单文件；host 由 build-host.mjs 内联 src/host/），重新生成：
+#   npm run build
+#
+# 注意两点：
+#   1. 被 gitignore 不影响 npm 打包——package.json 的 `files` 显式列了 `lib`，
+#      显式条目优先于 .gitignore，所以发布出去的 tarball 仍然带构建产物。
+#   2. 本插件是以 `link:` 装进 DSH profile 的，运行时直接读这个目录，
+#      所以**不要删掉本地已有的 lib/**，清掉就加载不到了。
+lib/
+
+# vendor 中间产物（cm.js / katex.js / infoview.js / infoview-css.js）
+work/
+
+node_modules/
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db
+*.log
+*.tgz

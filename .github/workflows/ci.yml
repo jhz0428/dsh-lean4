@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支的新提交取消旧的在跑任务。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # 依赖全部钉死到精确版本；package-lock.json 入库，所以用 npm ci。
+      - name: Install
+        run: npm ci
+
+      # 测试要读 lib/ 与 work/tmp/ 里的构建产物，所以先构建。
+      - name: Build
+        run: npm run build
+
+      - name: Check syntax
+        run: npm run check
+
+      - name: Test
+        run: npm test
+
+      # 确认发布出去的内容是对的：lib/ 虽然被 .gitignore 忽略，
+      # 但 package.json 的 files 显式列了它，tarball 里必须带。
+      - name: Verify package contents
+        run: npm pack --dry-run
+
+  # 单独一条：确认 tarball 里确实有构建产物（防止 files/.gitignore 组合被改坏）。
+  pack:
+    name: Package contains lib/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Assert lib/ is packed
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pack --json > pack.json
+          node -e '
+            const info = require("./pack.json");
+            const files = info[0].files.map((f) => f.path);
+            for (const want of ["lib/client.js", "lib/index.js", "src/client-body.js", "LICENSE", "LICENSE-APACHE-2.0"]) {
+              if (!files.includes(want)) {
+                console.error(`tarball 缺少 ${want}`);
+                process.exit(1);
+              }
+            }
+            console.log(`tarball 含 ${files.length} 个文件，检查通过`);
+          '
