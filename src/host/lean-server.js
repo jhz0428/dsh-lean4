@@ -66,6 +66,8 @@ export function createLeanServer(spec) {
   let disposed = false;
   /** 最近一次 dispose 的调用来源，用来解释「进程为什么没了」。 */
   let disposeReason = '';
+  /** stdin 上第一次写失败的描述；非 null 之后不再往这条管道写。 */
+  let stdinFailure = null;
 
   function emit(kind, payload) {
     for (const fn of listeners[kind]) {
@@ -91,11 +93,42 @@ export function createLeanServer(spec) {
     pending.clear();
   }
 
+  /**
+   * 记录一次流错误，并保证它**不会**变成 uncaughtException。
+   *
+   * DSH 宿主把任何未捕获异常都当致命错误（`installFailLoud` → 写 stderr → exit(1)），
+   * 于是 Lean 子进程退出后残留的一次 `write EPIPE` 就能把整个宿主连同所有会话打死，
+   * 桌面端只看到「应用无法启动或已意外停止」。所以 stdin/stdout/stderr 都必须挂 error 监听：
+   * 写失败记进日志和 `stderrTail`（`snapshot().stderr` 会带出去），再把等待中的请求拒掉。
+   *
+   * 读端（stdout/stderr）出错只记日志：子进程随后必有 `exit`，状态交给 `onChildExit`。
+   *
+   * @param which - 出错的流名，用于日志。
+   * @param error - 流上报出来的错误。
+   */
+  function onStreamFailure(which, error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    log(`[lean] ${which} error: ${detail}`);
+    stderrTail = (stderrTail + `[lean] ${which} error: ${detail}\n`).slice(-STDERR_BUFFER);
+    if (which !== 'stdin') return;
+    if (stdinFailure === null) stdinFailure = detail;
+    rejectAll(`could not write to the Lean server: ${detail}`);
+    if (!disposed) setState('failed', detail);
+  }
+
   function send(message) {
-    if (child === null || child.stdin === null || child.stdin.destroyed) {
-      throw new Error('the Lean server is not running');
+    const stream = child === null ? null : child.stdin;
+    if (stream === null || stream === undefined || stream.destroyed || stdinFailure !== null) {
+      const hint = stdinFailure === null ? '' : ` (${stdinFailure})`;
+      throw new Error(`the Lean server is not running${hint}`);
     }
-    child.stdin.write(encodeMessage(message));
+    try {
+      stream.write(encodeMessage(message));
+    } catch (error) {
+      /* 流刚好被销毁时 write 会同步抛错：和异步 EPIPE 走同一条记账路径。 */
+      onStreamFailure('stdin', error);
+      throw error instanceof Error ? error : new Error(String(error));
+    }
   }
 
   function notify(method, params) {
@@ -226,6 +259,7 @@ export function createLeanServer(spec) {
     setState('starting');
     startedAt = Date.now();
     stderrTail = '';
+    stdinFailure = null;
     reader = createMessageReader(handleMessage, (warning) => log(`[lsp] ${warning}`));
 
     child = spawn(command, args, {
@@ -234,6 +268,13 @@ export function createLeanServer(spec) {
       windowsHide: true,
       env: { ...process.env },
     });
+    /*
+     * 三个流都必须有 error 监听，否则子进程一退，残留写入的 EPIPE 就会成为
+     * uncaughtException，把 DSH 宿主整个打死（见 onStreamFailure 的注释）。
+     */
+    child.stdin?.on('error', (error) => onStreamFailure('stdin', error));
+    child.stdout.on('error', (error) => onStreamFailure('stdout', error));
+    child.stderr.on('error', (error) => onStreamFailure('stderr', error));
     child.stdout.on('data', (chunk) => reader.push(chunk));
     child.stderr.setEncoding('utf8');
     child.stderr.on('data', (chunk) => {
@@ -679,6 +720,7 @@ export function createLeanServer(spec) {
   async function restart() {
     dispose('restart');
     disposed = false;
+    stdinFailure = null;
     state = 'idle';
     return start();
   }

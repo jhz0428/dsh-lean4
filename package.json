@@ -1,6 +1,6 @@
 {
   "name": "dsh-lean4",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DSH 侧边栏插件：Lean 4 编辑与语言服务（CodeMirror + lean --server + infoview）",
   "type": "module",
   "main": "lib/index.js",
@@ -29,7 +29,7 @@
     "build:host": "node tools/build-host.mjs",
     "check": "node tools/check-syntax.mjs",
     "prepack": "node tools/build-client.mjs && node tools/build-host.mjs",
-    "test": "node test/lean-mode.test.mjs && node test/save.test.mjs && node test/conversation.test.mjs && node test/lean-comments.test.mjs && node test/gutter-marks.test.mjs && node test/markdown-lite.test.mjs && node test/markdown-math.test.mjs && node test/doc-markdown.test.mjs && node test/folding.test.mjs && node test/code-actions.test.mjs && node test/navigation.test.mjs && node test/paths.test.mjs && node test/infoview-config.test.mjs && node test/lsp.test.mjs && node test/lean-binary.test.mjs && node test/host-tools.test.mjs && node test/infoview.test.mjs && node test/editor-surface.test.mjs && node test/client-bundle.test.mjs"
+    "test": "node test/lean-mode.test.mjs && node test/save.test.mjs && node test/conversation.test.mjs && node test/lean-comments.test.mjs && node test/gutter-marks.test.mjs && node test/markdown-lite.test.mjs && node test/markdown-math.test.mjs && node test/doc-markdown.test.mjs && node test/folding.test.mjs && node test/code-actions.test.mjs && node test/navigation.test.mjs && node test/paths.test.mjs && node test/infoview-config.test.mjs && node test/lsp.test.mjs && node test/lean-server.test.mjs && node test/lean-binary.test.mjs && node test/host-tools.test.mjs && node test/infoview.test.mjs && node test/editor-surface.test.mjs && node test/client-bundle.test.mjs"
   },
   "dependencies": {},
   "peerDependencies": {
